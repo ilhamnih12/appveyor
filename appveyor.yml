@@ -34,5 +34,5 @@ build_script:
       # Keep session alive 55 minutes
       for ($i = 1; $i -le 55; $i++) {
         Write-Host "Minute $i of 55 active..."
-        Start-Sleep -Seconds 60
+        Start-Sleep -Seconds 600
       }
