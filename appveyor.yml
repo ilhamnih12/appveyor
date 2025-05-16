@@ -1,0 +1,38 @@
+version: 1.0.{build}
+image: Visual Studio 2022
+
+build: off
+
+init:
+  - ps: |
+      Import-Module AppVeyor
+      Enable-AppveyorRemoteDesktop
+
+install:
+  - ps: |
+      # Download LocalXpose CLI
+      Invoke-WebRequest -Uri "https://api.localxpose.io/api/assets/release/localxpose-windows-amd64.exe" -OutFile "$env:USERPROFILE\lx.exe"
+      Start-Sleep -Seconds 5
+
+      # Enable RDP
+      Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+      Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+      Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
+
+      # Set password user "appveyor"
+      Set-LocalUser -Name "appveyor" -Password (ConvertTo-SecureString -AsPlainText "p@ssw0rd!" -Force)
+
+build_script:
+  - ps: |
+      # Set LocalXpose token
+      $env:LX_AUTH_TOKEN = "ymvguXuUu6bscKygeFXKJr5nNtTi3l5DJq2pcTmb"
+      & "$env:USERPROFILE\lx.exe" authtoken $env:LX_AUTH_TOKEN
+
+      # Start tunnel tcp:3389 with name 'appveyor-rdp'
+      & "$env:USERPROFILE\lx.exe" tunnel tcp --port 3389 --region auto --name appveyor-rdp
+
+      # Keep session alive 55 minutes
+      for ($i = 1; $i -le 55; $i++) {
+        Write-Host "Minute $i of 55 active..."
+        Start-Sleep -Seconds 60
+      }
